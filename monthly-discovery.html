@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이달의 발굴템 — LINE FRIENDS SQUARE</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<style>
+:root {
+  --white:   #FFFFFF;
+  --black:   #000000;
+  --gray-bg: #F5F5F5;
+  --green:   #00C300;
+  --ink:     #111111;
+  --mid:     #555555;
+  --mute:    #999999;
+  --line:    #E5E5E5;
+  --font: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font); background: var(--white); color: var(--ink); -webkit-font-smoothing: antialiased; }
+a { text-decoration: none; color: inherit; }
+img { display: block; }
+
+/* ══ HERO ══ */
+.hero {
+  background: var(--black);
+  color: var(--white);
+  text-align: center;
+  padding: 100px 24px 88px;
+}
+
+.hero-event-label {
+  display: inline-block;
+  border: 1.5px solid rgba(255,255,255,.7);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--white);
+  padding: 6px 18px;
+  margin-bottom: 36px;
+}
+
+.hero-title {
+  font-size: clamp(52px, 12vw, 130px);
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 0.95;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.hero-title .green { color: var(--green); }
+
+.hero-vol {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,.75);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 36px;
+}
+
+.hero-desc {
+  font-size: clamp(14px, 2vw, 16px);
+  font-weight: 400;
+  color: rgba(255,255,255,.85);
+  line-height: 1.9;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.hero-desc em { font-style: normal; color: var(--white); font-weight: 700; }
+
+/* ══ MD NOTE ══ */
+.md-note {
+  background: var(--white);
+  border-bottom: 1px solid var(--line);
+  padding: 28px 40px;
+}
+
+.md-note-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.md-note-label {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--green);
+  white-space: nowrap;
+}
+
+.md-note-divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 28px;
+  background: var(--line);
+}
+
+.md-note-text {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.8;
+  font-weight: 400;
+}
+
+.md-note-text strong { color: var(--ink); font-weight: 700; }
+
+/* ══ SECTION COMMON ══ */
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--green);
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.section-heading {
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.05;
+  margin-bottom: 12px;
+}
+
+.section-sub {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--mid);
+  text-align: center;
+  line-height: 1.8;
+  margin-bottom: 56px;
+}
+
+/* ══ FEATURED ══ */
+.feat-wrap {
+  background: var(--white);
+  padding: 72px 40px;
+  border-bottom: 1px solid var(--line);
+}
+
+.feat-inner { max-width: 1080px; margin: 0 auto; }
+
+.feat-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1.5px solid var(--ink);
+  transition: box-shadow .25s;
+}
+
+.feat-card:hover { box-shadow: 8px 8px 0 var(--ink); }
+
+.feat-img-wrap {
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--gray-bg);
+  position: relative;
+}
+
+.feat-img-wrap img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform .5s ease;
+}
+
+.feat-card:hover .feat-img-wrap img { transform: scale(1.04); }
+
+.feat-flag {
+  position: absolute;
+  top: 0; left: 0;
+  background: var(--green);
+  color: var(--white);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 7px 16px;
+}
+
+.feat-body {
+  padding: 48px 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-left: 1.5px solid var(--ink);
+}
+
+.feat-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--mute);
+  margin-bottom: 20px;
+}
+
+.feat-drip {
+  font-size: clamp(22px, 3.5vw, 36px);
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1.25;
+  margin-bottom: 20px;
+}
+
+.feat-story {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink-mid, #444);
+  line-height: 1.9;
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--line);
+}
+
+.feat-story strong { color: var(--ink); font-weight: 600; }
+
+.feat-name {
+  font-size: 12px;
+  color: var(--mute);
+  font-weight: 300;
+  letter-spacing: .5px;
+  margin-bottom: 12px;
+}
+
+.feat-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.price-now { font-size: 24px; font-weight: 800; letter-spacing: -1px; }
+.price-original { font-size: 14px; color: var(--mute); text-decoration: line-through; font-weight: 300; }
+.price-rate { font-size: 13px; color: var(--green); font-weight: 700; }
+
+.btn-black {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--ink);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 16px 32px;
+  transition: background .18s, gap .2s;
+  align-self: flex-start;
+}
+
+.feat-card:hover .btn-black { background: var(--green); gap: 14px; }
+
+/* ══ PRODUCT GRID ══ */
+.grid-section {
+  background: var(--black);
+  padding: 72px 40px 80px;
+}
+
+.grid-inner { max-width: 1080px; margin: 0 auto; }
+
+.grid-header { text-align: center; margin-bottom: 48px; }
+
+.grid-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 12px;
+}
+
+.grid-heading {
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  text-transform: uppercase;
+  color: var(--white);
+  line-height: 1.05;
+  margin-bottom: 10px;
+}
+
+.grid-sub {
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255,255,255,.75);
+  line-height: 1.8;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.product-card {
+  background: var(--white);
+  display: block;
+  transition: transform .25s, box-shadow .25s;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,.4);
+}
+
+.card-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--gray-bg);
+  overflow: hidden;
+}
+
+.card-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform .45s ease;
+}
+
+.product-card:hover .card-img img { transform: scale(1.05); }
+
+.card-body { padding: 16px 18px 22px; }
+
+.card-drip {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--mute);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.card-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-point {
+  font-size: 11px;
+  color: var(--mute);
+  font-weight: 300;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.card-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.card-price { font-size: 15px; font-weight: 800; letter-spacing: -.5px; }
+.card-original { font-size: 12px; color: var(--mute); text-decoration: line-through; font-weight: 300; }
+.card-discount { font-size: 12px; color: var(--green); font-weight: 700; }
+
+.card-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+  padding-bottom: 2px;
+  transition: color .18s, border-color .18s;
+}
+
+.product-card:hover .card-view { color: var(--green); border-color: var(--green); }
+
+/* ══ NEXT MONTH ══ */
+.next-section {
+  background: var(--white);
+  border-top: 1px solid var(--line);
+  padding: 88px 40px;
+  text-align: center;
+}
+
+.next-inner { max-width: 560px; margin: 0 auto; }
+
+.next-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 16px;
+}
+
+.next-title {
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 900;
+  letter-spacing: -2px;
+  text-transform: uppercase;
+  line-height: 1.0;
+  margin-bottom: 16px;
+}
+
+.next-body {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--mid);
+  line-height: 1.9;
+  margin-bottom: 36px;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 15px 32px;
+  border: 1.5px solid var(--ink);
+  transition: background .18s, color .18s, gap .2s;
+}
+
+.btn-outline:hover { background: var(--ink); color: var(--white); gap: 14px; }
+
+/* ══ ANIMATIONS ══ */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity .65s ease, transform .65s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.d1{transition-delay:.04s} .d2{transition-delay:.09s} .d3{transition-delay:.14s}
+.d4{transition-delay:.04s} .d5{transition-delay:.09s} .d6{transition-delay:.14s}
+
+/* ══ RESPONSIVE ══ */
+@media (max-width: 860px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 680px) {
+  .hero { padding: 72px 24px 64px; }
+  .md-note { padding: 20px 24px; }
+  .feat-wrap { padding: 48px 24px; }
+  .feat-card { grid-template-columns: 1fr; }
+  .feat-body { border-left: none; border-top: 1.5px solid var(--ink); padding: 32px 28px; }
+  .grid-section { padding: 56px 24px 64px; }
+  .next-section { padding: 64px 24px; }
+}
+@media (max-width: 480px) {
+  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<script>
+/* ================================================================
+   ★ CONFIG — 매달 여기만 수정하세요
+   ================================================================
+   vol            : 기획전 회차      예) '05'
+   period         : 기간 표시        예) '2025 MAY'
+   mdNote         : MD 코멘트. <strong>으로 강조 가능
+
+   featured (1개)
+     image         : 썸네일 이미지 URL
+     url           : 상품 상세페이지 URL
+     name          : 제품명
+     price         : 판매가          예) '12,900원'
+     originalPrice : 정가 (없으면 '' )
+     drip          : 드립 카피
+     story         : 제품 설명 (<strong> 사용 가능)
+
+   products (6개)
+     image         : 썸네일 이미지 URL
+     url           : 상품 상세페이지 URL
+     name          : 제품명
+     price         : 판매가
+     originalPrice : 정가 (없으면 '' )
+     drip          : 드립 카피
+     point         : 특장점 (없으면 '' )
+================================================================ */
+
+const CONFIG = {
+
+  vol:    '04',
+  period: '2025 APR',
+  mdNote: '어떤 물건은 그냥 때를 못 만난 것뿐이에요. <strong>빛이 제대로 닿으면, 원래부터 그랬던 것처럼 반짝입니다.</strong> 제품은 그대로인데 왠지 새로워 보이죠? 그게 이 코너의 포인트예요.',
+
+  featured: {
+    image:         'https://example.com/images/brown-mushroom.jpg',
+    url:           'https://linefriends.com/products/brown-mushroom-keyring',
+    name:          '브라운 캐릭터 키링 — 버섯 ver.',
+    price:         '12,900원',
+    originalPrice: '18,000원',
+    drip:          '"능히 할 수 있는 능이버섯 (국내산)"',
+    story:         '버섯 모자를 쓰고 있길래 그냥 버섯인 줄 알았습니다. 근데 자세히 보니 그냥 버섯이 아니에요. <strong>능이버섯이에요. 게다가 국내산.</strong> 왜 이렇게 자신감이 있는 거야.',
+  },
+
+  products: [
+    {
+      image:         'https://example.com/images/product-1.jpg',
+      url:           'https://linefriends.com/products/product-1',
+      name:          '제품명 1',
+      price:         '9,900원',
+      originalPrice: '14,000원',
+      drip:          '"여기서 이러고 있을 줄이야"',
+      point:         '특장점 입력 (선택사항)',
+    },
+    {
+      image:         'https://example.com/images/product-2.jpg',
+      url:           'https://linefriends.com/products/product-2',
+      name:          '제품명 2',
+      price:         '15,900원',
+      originalPrice: '',
+      drip:          '"생각보다 훨씬 진지합니다"',
+      point:         '',
+    },
+    {
+      image:         'https://example.com/images/product-3.jpg',
+      url:           'https://linefriends.com/products/product-3',
+      name:          '제품명 3',
+      price:         '8,900원',
+      originalPrice: '12,000원',
+      drip:          '"존재만으로도 충분한 애"',
+      point:         '',
+    },
+    {
+      image:         'https://example.com/images/product-4.jpg',
+      url:           'https://linefriends.com/products/product-4',
+      name:          '제품명 4',
+      price:         '19,900원',
+      originalPrice: '25,000원',
+      drip:          '"이게 왜 안 팔린 거지..."',
+      point:         '한정 수량 남은 거 맞아요',
+    },
+    {
+      image:         'https://example.com/images/product-5.jpg',
+      url:           'https://linefriends.com/products/product-5',
+      name:          '제품명 5',
+      price:         '11,900원',
+      originalPrice: '',
+      drip:          '"조용히 서 있는데 왜 눈에 띄지"',
+      point:         '',
+    },
+    {
+      image:         'https://example.com/images/product-6.jpg',
+      url:           'https://linefriends.com/products/product-6',
+      name:          '제품명 6',
+      price:         '13,900원',
+      originalPrice: '18,000원',
+      drip:          '"첫인상이 전부가 아니라는 증거"',
+      point:         '',
+    },
+  ],
+};
+
+/* ================================================================
+   ↓↓↓ 아래는 건드리지 마세요 ↓↓↓
+================================================================ */
+function calcDiscount(original, current) {
+  const o = parseInt(original.replace(/[^0-9]/g, ''));
+  const c = parseInt(current.replace(/[^0-9]/g, ''));
+  if (!o || !c || o <= c) return '';
+  return `-${Math.round((o - c) / o * 100)}%`;
+}
+
+const arrowSVG = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function render() {
+  const { vol, period, mdNote, featured: f, products } = CONFIG;
+
+  document.getElementById('ld-vol').textContent  = `Vol.${vol} / ${period}`;
+  document.getElementById('ld-note').innerHTML   = mdNote;
+
+  // Featured
+  document.getElementById('ld-feat-link').href         = f.url;
+  document.getElementById('ld-feat-img').src           = f.image;
+  document.getElementById('ld-feat-img').alt           = f.name;
+  document.getElementById('ld-feat-drip').textContent  = f.drip;
+  document.getElementById('ld-feat-story').innerHTML   = f.story;
+  document.getElementById('ld-feat-name').textContent  = f.name;
+  document.getElementById('ld-feat-price').textContent = f.price;
+
+  const origEl = document.getElementById('ld-feat-orig');
+  const rateEl = document.getElementById('ld-feat-rate');
+  if (f.originalPrice) {
+    origEl.textContent = f.originalPrice;
+    rateEl.textContent = calcDiscount(f.originalPrice, f.price);
+  } else {
+    origEl.style.display = rateEl.style.display = 'none';
+  }
+
+  // Grid
+  const delays = ['d1','d2','d3','d4','d5','d6'];
+  document.getElementById('ld-grid').innerHTML = products.map((p, i) => {
+    const d = calcDiscount(p.originalPrice, p.price);
+    return `
+      <a href="${p.url}" class="product-card reveal ${delays[i]||''}">
+        <div class="card-img">
+          <img src="${p.image}" alt="${p.name}" loading="lazy">
+        </div>
+        <div class="card-body">
+          <p class="card-drip">${p.drip}</p>
+          <p class="card-name">${p.name}</p>
+          ${p.point ? `<p class="card-point">${p.point}</p>` : ''}
+          <div class="card-price-row">
+            <span class="card-price">${p.price}</span>
+            ${p.originalPrice ? `<span class="card-original">${p.originalPrice}</span>` : ''}
+            ${d ? `<span class="card-discount">${d}</span>` : ''}
+          </div>
+          <span class="card-view">View ${arrowSVG}</span>
+        </div>
+      </a>`;
+  }).join('');
+
+  // Scroll reveal
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }});
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+}
+
+document.addEventListener('DOMContentLoaded', render);
+</script>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <p class="hero-event-label">Event</p>
+  <h1 class="hero-title">
+    이달의<br>
+    <span class="green">발굴템</span>
+  </h1>
+  <p class="hero-vol" id="ld-vol"></p>
+  <p class="hero-desc">
+    어떤 것들은 그냥 때를 못 만났을 뿐이에요.<br>
+    다시 보면, <em>처음부터 이런 애였나 싶은</em> 것들이 있거든요.<br>
+    이번 달, 우리가 찾아냈습니다.
+  </p>
+</section>
+
+<!-- ══ MD NOTE ══ -->
+<div class="md-note">
+  <div class="md-note-inner reveal">
+    <span class="md-note-label">MD's Note</span>
+    <div class="md-note-divider"></div>
+    <p class="md-note-text" id="ld-note"></p>
+  </div>
+</div>
+
+<!-- ══ FEATURED ══ -->
+<div class="feat-wrap">
+  <div class="feat-inner">
+    <p class="section-label reveal">Staff Pick</p>
+    <h2 class="section-heading reveal">THIS MONTH'S PICK</h2>
+    <p class="section-sub reveal">이번 달 가장 강력하게 추천하는 한 가지</p>
+
+    <a class="feat-card reveal" id="ld-feat-link" href="#">
+      <div class="feat-img-wrap">
+        <img id="ld-feat-img" src="" alt="">
+        <span class="feat-flag">★ Staff Pick</span>
+      </div>
+      <div class="feat-body">
+        <p class="feat-eyebrow">This Month's Pick</p>
+        <h3 class="feat-drip" id="ld-feat-drip"></h3>
+        <p class="feat-story" id="ld-feat-story"></p>
+        <p class="feat-name" id="ld-feat-name"></p>
+        <div class="feat-price-row">
+          <span class="price-now" id="ld-feat-price"></span>
+          <span class="price-original" id="ld-feat-orig"></span>
+          <span class="price-rate" id="ld-feat-rate"></span>
+        </div>
+        <span class="btn-black">
+          상품 보러가기 ${arrowSVG}
+        </span>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ══ PRODUCT GRID ══ -->
+<div class="grid-section">
+  <div class="grid-inner">
+    <div class="grid-header">
+      <p class="grid-label reveal">Monthly Discovery</p>
+      <h2 class="grid-heading reveal">이번 달 발굴된 것들</h2>
+      <p class="grid-sub reveal">새 이야기를 입고 돌아온 라인프렌즈</p>
+    </div>
+    <div class="product-grid" id="ld-grid"></div>
+  </div>
+</div>
+
+<!-- ══ NEXT MONTH ══ -->
+<section class="next-section">
+  <div class="next-inner">
+    <p class="next-label reveal">Next Month</p>
+    <h2 class="next-title reveal">NEXT DISCOVERY</h2>
+    <p class="next-body reveal">
+      매달 조용히 업데이트됩니다.<br>
+      알림 켜두시면 남들보다 먼저 볼 수 있어요.
+    </p>
+    <a href="#" class="btn-outline reveal">
+      알림 신청
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+</section>
+
+</body>
+</html>
