@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discovery Maker — AI 카피 생성기</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<style>
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
+  .fade-in { animation: fadeIn .3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .result-text { white-space: pre-wrap; }
+  .streaming { border-right: 2px solid #22c55e; animation: blink .7s step-end infinite; }
+  @keyframes blink { 50% { border-color: transparent; } }
+  textarea { resize: vertical; }
+</style>
+</head>
+<body class="bg-gray-950 min-h-screen text-white">
+
+<!-- API KEY SETUP SCREEN -->
+<div id="setup-screen" class="flex items-center justify-center min-h-screen">
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-10 w-full max-w-md shadow-2xl">
+    <p class="text-xs font-bold tracking-[4px] uppercase text-green-400 mb-2">LINE FRIENDS SQUARE</p>
+    <h1 class="text-2xl font-black mb-2 tracking-tight">Discovery Maker</h1>
+    <p class="text-sm text-gray-400 mb-8">AI가 드립 카피, MD 노트, 스토리를 대신 써줍니다.</p>
+
+    <div class="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6 text-xs text-gray-400 leading-relaxed">
+      <p class="font-semibold text-yellow-400 mb-1">🔐 보안 안내</p>
+      API 키는 이 기기의 세션 메모리(sessionStorage)에만 저장됩니다.<br>
+      탭을 닫으면 자동으로 사라지며, 서버나 파일에 저장되지 않습니다.
+    </div>
+
+    <label class="block text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-widest">Admin Password</label>
+    <input id="pw-input" type="password" placeholder="••••"
+      class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white mb-4 focus:border-green-400 outline-none transition">
+
+    <label class="block text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-widest">Claude API Key</label>
+    <input id="api-key-input" type="password" placeholder="sk-ant-api03-..."
+      class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono mb-1.5 focus:border-green-400 outline-none transition">
+    <p class="text-xs text-gray-600 mb-6">
+      <a href="https://console.anthropic.com/settings/keys" target="_blank" class="text-gray-500 hover:text-green-400 transition">console.anthropic.com</a>에서 발급
+    </p>
+
+    <div id="setup-error" class="text-red-400 text-xs mb-4 hidden"></div>
+    <button onclick="handleSetup()"
+      class="w-full bg-green-500 hover:bg-green-400 text-black font-bold text-sm py-3 rounded-lg transition tracking-wide">
+      시작하기
+    </button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" class="hidden">
+  <!-- Header -->
+  <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <span class="text-green-400 text-xs font-bold tracking-[3px] uppercase">Discovery</span>
+      <span class="text-gray-600">|</span>
+      <span class="text-sm font-semibold">AI Maker</span>
+    </div>
+    <button onclick="handleLogout()" class="text-xs text-gray-500 hover:text-white transition">
+      API 키 초기화
+    </button>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-10 space-y-8">
+
+    <!-- MODE TABS -->
+    <div class="flex gap-2 bg-gray-900 border border-gray-800 rounded-xl p-1.5">
+      <button onclick="setMode('drip')" id="tab-drip"
+        class="flex-1 text-xs font-bold py-2.5 rounded-lg transition">
+        드립 카피
+      </button>
+      <button onclick="setMode('story')" id="tab-story"
+        class="flex-1 text-xs font-bold py-2.5 rounded-lg transition">
+        상품 스토리
+      </button>
+      <button onclick="setMode('mdnote')" id="tab-mdnote"
+        class="flex-1 text-xs font-bold py-2.5 rounded-lg transition">
+        MD 노트
+      </button>
+      <button onclick="setMode('batch')" id="tab-batch"
+        class="flex-1 text-xs font-bold py-2.5 rounded-lg transition">
+        일괄 생성
+      </button>
+    </div>
+
+    <!-- DRIP COPY MODE -->
+    <div id="mode-drip" class="mode-panel space-y-5">
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h2 class="text-xs font-bold tracking-[3px] uppercase text-green-400 mb-1">드립 카피 생성</h2>
+        <p class="text-xs text-gray-500 mb-5">상품 정보를 입력하면 위트있는 한 줄 카피를 생성합니다.</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">상품명</label>
+            <input id="drip-name" type="text" placeholder="브라운 캐릭터 키링 — 버섯 ver."
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">카테고리</label>
+            <input id="drip-category" type="text" placeholder="키링, 인형, 텀블러 등"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">주요 특징</label>
+            <input id="drip-feature" type="text" placeholder="능이버섯 모자, 국내산 등"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 outline-none transition">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">톤 앤 매너</label>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="selectTone(this,'위트있고 유머러스하게')" class="tone-btn text-xs px-3 py-1.5 rounded-lg border border-gray-700 bg-gray-800 hover:border-green-400 transition">위트/유머</button>
+              <button onclick="selectTone(this,'감성적이고 시적으로')" class="tone-btn text-xs px-3 py-1.5 rounded-lg border border-gray-700 bg-gray-800 hover:border-green-400 transition">감성/시적</button>
+              <button onclick="selectTone(this,'쿨하고 간결하게')" class="tone-btn text-xs px-3 py-1.5 rounded-lg border border-gray-700 bg-gray-800 hover:border-green-400 transition">쿨/간결</button>
+              <button onclick="selectTone(this,'따뜻하고 친근하게')" class="tone-btn text-xs px-3 py-1.5 rounded-lg border border-gray-700 bg-gray-800 hover:border-green-400 transition">따뜻/친근</button>
+            </div>
+            <input id="drip-tone" type="hidden" value="위트있고 유머러스하게">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">생성 개수</label>
+            <select id="drip-count"
+              class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 outline-none transition">
+              <option value="3">3개</option>
+              <option value="5" selected>5개</option>
+              <option value="7">7개</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="generateDrip()"
+          class="mt-5 w-full bg-green-500 hover:bg-green-400 text-black font-bold text-sm py-3 rounded-lg transition tracking-wide">
+          드립 카피 생성
+        </button>
+      </div>
+      <div id="drip-result" class="hidden"></div>
+    </div>
+
+    <!-- STORY MODE -->
+    <div id="mode-story" class="mode-panel hidden space-y-5">
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h2 class="text-xs font-bold tracking-[3px] uppercase text-green-400 mb-1">상품 스토리 생성</h2>
+        <p class="text-xs text-gray-500 mb-5">이달의 픽 상품에 어울리는 에디토리얼 스토리를 씁니다.</p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">상품명</label>
+            <input id="story-name" type="text" placeholder="브라운 캐릭터 키링 — 버섯 ver."
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">드립 카피 (있으면 입력)</label>
+            <input id="story-drip" type="text" placeholder='"능히 할 수 있는 능이버섯 (국내산)"'
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">상품 특징 / 소재 / 에피소드</label>
+            <textarea id="story-detail" rows="4" placeholder="버섯 모자를 쓰고 있음, 능이버섯처럼 생김, 자신감 넘치는 디자인..."
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 outline-none transition"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">분량</label>
+            <select id="story-length"
+              class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 outline-none transition">
+              <option value="short">짧게 (2-3문장)</option>
+              <option value="medium" selected>보통 (3-5문장)</option>
+              <option value="long">길게 (5-7문장)</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="generateStory()"
+          class="mt-5 w-full bg-green-500 hover:bg-green-400 text-black font-bold text-sm py-3 rounded-lg transition tracking-wide">
+          스토리 생성
+        </button>
+      </div>
+      <div id="story-result" class="hidden"></div>
+    </div>
+
+    <!-- MD NOTE MODE -->
+    <div id="mode-mdnote" class="mode-panel hidden space-y-5">
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h2 class="text-xs font-bold tracking-[3px] uppercase text-green-400 mb-1">MD 노트 생성</h2>
+        <p class="text-xs text-gray-500 mb-5">이번 달 발굴템 테마에 맞는 MD 코멘트를 생성합니다.</p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">이번 달 테마 / 키워드</label>
+            <input id="md-theme" type="text" placeholder="빛을 못 만난 물건들, 재발견, 숨겨진 매력"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">이번 달 대표 상품들 (쉼표 구분)</label>
+            <input id="md-products" type="text" placeholder="버섯 키링, 미니 캔들, 투명 파우치"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5 font-medium">MD가 강조하고 싶은 포인트</label>
+            <textarea id="md-point" rows="3" placeholder="제품 자체는 좋은데 홍보가 안된 것들, 재발견의 즐거움..."
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 outline-none transition"></textarea>
+          </div>
+        </div>
+        <button onclick="generateMdNote()"
+          class="mt-5 w-full bg-green-500 hover:bg-green-400 text-black font-bold text-sm py-3 rounded-lg transition tracking-wide">
+          MD 노트 생성
+        </button>
+      </div>
+      <div id="mdnote-result" class="hidden"></div>
+    </div>
+
+    <!-- BATCH MODE -->
+    <div id="mode-batch" class="mode-panel hidden space-y-5">
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h2 class="text-xs font-bold tracking-[3px] uppercase text-green-400 mb-1">일괄 생성</h2>
+        <p class="text-xs text-gray-500 mb-5">6개 상품 정보를 입력하면 드립 카피를 한번에 생성합니다.</p>
+        <div id="batch-inputs" class="space-y-3">
+          <!-- Built by JS -->
+        </div>
+        <button onclick="generateBatch()"
+          class="mt-5 w-full bg-green-500 hover:bg-green-400 text-black font-bold text-sm py-3 rounded-lg transition tracking-wide">
+          6개 드립 카피 일괄 생성
+        </button>
+      </div>
+      <div id="batch-result" class="hidden"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const ADMIN_PASSWORD = '0715';
+const SESSION_KEY = 'discovery_maker_apikey';
+let currentMode = 'drip';
+let selectedTone = '위트있고 유머러스하게';
+
+// ── Setup & Auth ──────────────────────────────────────────────
+function handleSetup() {
+  const pw = document.getElementById('pw-input').value;
+  const key = document.getElementById('api-key-input').value.trim();
+  const errEl = document.getElementById('setup-error');
+
+  if (pw !== ADMIN_PASSWORD) {
+    errEl.textContent = '비밀번호가 틀렸습니다.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!key.startsWith('sk-ant-')) {
+    errEl.textContent = 'API 키 형식이 올바르지 않습니다. sk-ant- 로 시작해야 합니다.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  sessionStorage.setItem(SESSION_KEY, key);
+  errEl.classList.add('hidden');
+  document.getElementById('setup-screen').classList.add('hidden');
+  document.getElementById('main-app').classList.remove('hidden');
+  setMode('drip');
+  buildBatchInputs();
+}
+
+function handleLogout() {
+  sessionStorage.removeItem(SESSION_KEY);
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('setup-screen').classList.remove('hidden');
+  document.getElementById('pw-input').value = '';
+  document.getElementById('api-key-input').value = '';
+}
+
+function getApiKey() {
+  return sessionStorage.getItem(SESSION_KEY);
+}
+
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('api-key-input').focus(); });
+document.getElementById('api-key-input').addEventListener('keydown', e => { if (e.key === 'Enter') handleSetup(); });
+
+// ── Mode Tabs ─────────────────────────────────────────────────
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-panel').forEach(el => el.classList.add('hidden'));
+  document.getElementById(`mode-${mode}`).classList.remove('hidden');
+  document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+    btn.className = 'flex-1 text-xs font-bold py-2.5 rounded-lg transition text-gray-400 hover:text-white';
+  });
+  const active = document.getElementById(`tab-${mode}`);
+  active.className = 'flex-1 text-xs font-bold py-2.5 rounded-lg transition bg-green-500 text-black';
+}
+
+// ── Tone Selector ─────────────────────────────────────────────
+function selectTone(btn, tone) {
+  selectedTone = tone;
+  document.getElementById('drip-tone').value = tone;
+  document.querySelectorAll('.tone-btn').forEach(b => {
+    b.className = 'tone-btn text-xs px-3 py-1.5 rounded-lg border border-gray-700 bg-gray-800 hover:border-green-400 transition text-gray-300';
+  });
+  btn.className = 'tone-btn text-xs px-3 py-1.5 rounded-lg border border-green-500 bg-green-500/10 transition text-green-400 font-semibold';
+}
+
+// ── Batch Inputs Builder ──────────────────────────────────────
+function buildBatchInputs() {
+  const container = document.getElementById('batch-inputs');
+  container.innerHTML = Array.from({length: 6}, (_, i) => `
+    <div class="flex gap-3 items-center">
+      <span class="text-xs font-bold text-gray-600 w-4">${i+1}</span>
+      <input id="batch-${i}" type="text" placeholder="상품명 ${i+1} (예: 브라운 미니 캔들)"
+        class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-400 outline-none transition">
+    </div>
+  `).join('');
+}
+
+// ── Claude API Call (Streaming) ───────────────────────────────
+async function streamClaude(prompt, systemPrompt, onChunk, onDone) {
+  const apiKey = getApiKey();
+  if (!apiKey) { handleLogout(); return; }
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-calls': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-6',
+      max_tokens: 1024,
+      stream: true,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error?.message || `API Error ${response.status}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6);
+      if (data === '[DONE]') continue;
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
+          onChunk(parsed.delta.text);
+        }
+      } catch {}
+    }
+  }
+  onDone();
+}
+
+// ── Result Card ───────────────────────────────────────────────
+function showResultCard(containerId, title) {
+  const el = document.getElementById(containerId);
+  el.classList.remove('hidden');
+  el.innerHTML = `
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 fade-in">
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-xs font-bold tracking-[3px] uppercase text-green-400">${title}</p>
+        <button onclick="copyResult('${containerId}-text')"
+          class="text-xs text-gray-500 hover:text-white transition border border-gray-700 px-3 py-1 rounded-lg">복사</button>
+      </div>
+      <p id="${containerId}-text" class="result-text text-sm text-gray-200 leading-relaxed streaming"></p>
+    </div>
+  `;
+  return document.getElementById(`${containerId}-text`);
+}
+
+function copyResult(id) {
+  const text = document.getElementById(id)?.innerText;
+  if (text) {
+    navigator.clipboard.writeText(text);
+    showToast('복사되었습니다!');
+  }
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'fixed bottom-6 right-6 bg-green-500 text-black text-sm font-bold px-5 py-3 rounded-xl shadow-2xl fade-in';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
+// ── Generate Functions ────────────────────────────────────────
+async function generateDrip() {
+  const name = document.getElementById('drip-name').value.trim();
+  const category = document.getElementById('drip-category').value.trim();
+  const feature = document.getElementById('drip-feature').value.trim();
+  const tone = document.getElementById('drip-tone').value;
+  const count = document.getElementById('drip-count').value;
+
+  if (!name) { showToast('상품명을 입력해주세요.'); return; }
+
+  const textEl = showResultCard('drip-result', 'Generated Drip Copy');
+
+  const system = `당신은 LINE FRIENDS SQUARE의 크리에이티브 카피라이터입니다.
+"이달의 발굴템" 코너의 드립 카피를 쓰는 전문가입니다.
+드립 카피 특징:
+- 큰따옴표 안에 작성 (예: "능히 할 수 있는 능이버섯 (국내산)")
+- 짧고 위트있는 한 문장
+- 상품의 특징을 재해석하거나 의인화
+- 한국어, 자연스러운 말투
+- 광고 느낌 X, 친구가 추천하는 느낌 O`;
+
+  const prompt = `다음 상품의 드립 카피를 ${tone} ${count}개 작성해주세요.
+
+상품명: ${name}
+${category ? `카테고리: ${category}` : ''}
+${feature ? `주요 특징: ${feature}` : ''}
+
+각 카피를 번호 목록으로 나열해주세요. 설명 없이 카피만 작성하세요.`;
+
+  try {
+    let full = '';
+    await streamClaude(prompt, system,
+      chunk => { full += chunk; textEl.textContent = full; },
+      () => { textEl.classList.remove('streaming'); }
+    );
+  } catch (e) {
+    textEl.classList.remove('streaming');
+    textEl.textContent = '오류: ' + e.message;
+    textEl.classList.add('text-red-400');
+  }
+}
+
+async function generateStory() {
+  const name = document.getElementById('story-name').value.trim();
+  const drip = document.getElementById('story-drip').value.trim();
+  const detail = document.getElementById('story-detail').value.trim();
+  const length = document.getElementById('story-length').value;
+
+  if (!name) { showToast('상품명을 입력해주세요.'); return; }
+
+  const textEl = showResultCard('story-result', 'Generated Story');
+
+  const lengthMap = { short: '2-3문장', medium: '3-5문장', long: '5-7문장' };
+
+  const system = `당신은 LINE FRIENDS SQUARE의 에디토리얼 라이터입니다.
+"이달의 발굴템" 코너의 상품 스토리를 쓰는 전문가입니다.
+스토리 특징:
+- 에디토리얼 무드, 가볍지만 진지한 톤
+- 상품을 의인화하거나 상황을 설정해서 재미있게 풀기
+- <strong> 태그로 핵심 문장 강조 가능
+- 판매 멘트 X, 발견한 이야기 O
+- 2-7문장 내외`;
+
+  const prompt = `다음 상품의 스토리를 ${lengthMap[length]}로 작성해주세요.
+
+상품명: ${name}
+${drip ? `드립 카피: ${drip}` : ''}
+${detail ? `상품 특징/에피소드: ${detail}` : ''}
+
+에디토리얼 무드로 작성하고, 핵심 문장에는 <strong>태그를 사용해도 됩니다.`;
+
+  try {
+    let full = '';
+    await streamClaude(prompt, system,
+      chunk => { full += chunk; textEl.innerHTML = full; },
+      () => { textEl.classList.remove('streaming'); }
+    );
+  } catch (e) {
+    textEl.classList.remove('streaming');
+    textEl.textContent = '오류: ' + e.message;
+    textEl.classList.add('text-red-400');
+  }
+}
+
+async function generateMdNote() {
+  const theme = document.getElementById('md-theme').value.trim();
+  const products = document.getElementById('md-products').value.trim();
+  const point = document.getElementById('md-point').value.trim();
+
+  if (!theme) { showToast('테마/키워드를 입력해주세요.'); return; }
+
+  const textEl = showResultCard('mdnote-result', 'Generated MD Note');
+
+  const system = `당신은 LINE FRIENDS SQUARE의 MD(머천다이저)입니다.
+"이달의 발굴템" 코너의 MD 노트를 쓰는 전문가입니다.
+MD 노트 특징:
+- MD의 개인적인 관점으로, 짧고 통찰있게
+- 2-4문장 내외
+- <strong> 태그로 핵심 포인트 강조 가능
+- 홍보 느낌 X, 진짜 발견의 기쁨 O
+- "어떤 물건은 그냥 때를 못 만난 것뿐이에요." 같은 톤`;
+
+  const prompt = `이번 달 발굴템 코너의 MD 노트를 작성해주세요.
+
+테마/키워드: ${theme}
+${products ? `이번 달 상품들: ${products}` : ''}
+${point ? `강조하고 싶은 포인트: ${point}` : ''}
+
+MD의 개인적인 관점으로, 2-4문장으로 작성해주세요. 핵심 문장에 <strong>태그 사용 가능.`;
+
+  try {
+    let full = '';
+    await streamClaude(prompt, system,
+      chunk => { full += chunk; textEl.innerHTML = full; },
+      () => { textEl.classList.remove('streaming'); }
+    );
+  } catch (e) {
+    textEl.classList.remove('streaming');
+    textEl.textContent = '오류: ' + e.message;
+    textEl.classList.add('text-red-400');
+  }
+}
+
+async function generateBatch() {
+  const names = Array.from({length: 6}, (_, i) =>
+    document.getElementById(`batch-${i}`)?.value.trim()
+  ).filter(Boolean);
+
+  if (names.length === 0) { showToast('상품명을 최소 1개 입력해주세요.'); return; }
+
+  const textEl = showResultCard('batch-result', 'Batch Drip Copy');
+
+  const system = `당신은 LINE FRIENDS SQUARE의 크리에이티브 카피라이터입니다.
+드립 카피: 큰따옴표 안에 짧고 위트있는 한 문장. 상품 특징을 재해석.`;
+
+  const prompt = `다음 상품들의 드립 카피를 각각 1개씩 작성해주세요.
+
+${names.map((n, i) => `${i+1}. ${n}`).join('\n')}
+
+형식:
+1. "카피 내용"
+2. "카피 내용"
+...
+설명 없이 카피만 작성하세요.`;
+
+  try {
+    let full = '';
+    await streamClaude(prompt, system,
+      chunk => { full += chunk; textEl.textContent = full; },
+      () => { textEl.classList.remove('streaming'); }
+    );
+  } catch (e) {
+    textEl.classList.remove('streaming');
+    textEl.textContent = '오류: ' + e.message;
+    textEl.classList.add('text-red-400');
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────
+// If session still has key (same tab session), skip setup
+if (sessionStorage.getItem(SESSION_KEY)) {
+  document.getElementById('setup-screen').classList.add('hidden');
+  document.getElementById('main-app').classList.remove('hidden');
+  setMode('drip');
+  buildBatchInputs();
+}
+</script>
+
+</body>
+</html>
