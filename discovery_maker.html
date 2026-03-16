@@ -289,14 +289,14 @@ copies 3개는 각각 톤이 달라야 해:
     var apiKey = sessionStorage.getItem('gk_api_key');
     if (!apiKey) { resetKey(); return; }
 
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
+    var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    var apiUrl = isLocal ? '/api/messages' : 'https://api.anthropic.com/v1/messages';
+    var headers = { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' };
+    if (!isLocal) headers['anthropic-dangerous-direct-browser-calls'] = 'true';
+
+    var res = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-calls': 'true',
-      },
+      headers: headers,
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1000,
