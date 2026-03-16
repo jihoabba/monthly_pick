@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>곡괭이</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif; background: #fff; color: #111; padding: 1rem; max-width: 600px; margin: 0 auto; }
+.header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 0.5px solid #e5e5e5; }
+.pickaxe { font-size: 28px; }
+.header-text h1 { font-size: 18px; font-weight: 500; }
+.header-text p { font-size: 13px; color: #666; margin-top: 2px; }
+.section { background: #fff; border: 0.5px solid #e5e5e5; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 12px; }
+.section-title { font-size: 13px; font-weight: 500; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+.field input, .field textarea { width: 100%; font-family: inherit; font-size: 14px; border: 0.5px solid #ddd; border-radius: 8px; padding: 8px 10px; outline: none; transition: border-color 0.15s; }
+.field input:focus, .field textarea:focus { border-color: #111; }
+.field textarea { resize: vertical; min-height: 72px; }
+.img-preview { width: 100%; height: 140px; border: 0.5px solid #e5e5e5; border-radius: 8px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; overflow: hidden; }
+.img-preview img { width: 100%; height: 100%; object-fit: contain; }
+.img-placeholder { color: #aaa; font-size: 13px; }
+.gen-btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 500; cursor: pointer; background: #111; color: #fff; border: none; border-radius: 8px; margin-top: 4px; transition: opacity 0.15s; font-family: inherit; }
+.gen-btn:hover { opacity: 0.85; }
+.gen-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.result-wrap { margin-top: 16px; }
+.result-section { background: #f5f5f5; border-radius: 8px; padding: 1rem; margin-bottom: 10px; }
+.result-label { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.copy-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.copy-text { font-size: 14px; color: #111; line-height: 1.6; flex: 1; }
+.copy-btn { font-size: 11px; padding: 4px 10px; cursor: pointer; white-space: nowrap; flex-shrink: 0; background: #fff; border: 0.5px solid #ddd; border-radius: 6px; font-family: inherit; }
+.capy-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 8px; border: 0.5px solid #e5e5e5; background: #fff; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s; }
+.capy-item:hover { border-color: #999; }
+.capy-item.selected { border: 1.5px solid #111; }
+.capy-num { font-size: 11px; color: #aaa; min-width: 16px; margin-top: 2px; }
+.capy-txt { font-size: 14px; color: #111; line-height: 1.6; }
+.save-btn { width: 100%; padding: 10px; font-size: 13px; cursor: pointer; border-radius: 8px; margin-top: 8px; background: #fff; border: 0.5px solid #ddd; font-family: inherit; transition: background 0.15s; }
+.save-btn:hover { background: #f5f5f5; }
+.library-wrap { margin-top: 1.5rem; border-top: 0.5px solid #e5e5e5; padding-top: 1rem; }
+.lib-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.lib-title { font-size: 14px; font-weight: 500; }
+.lib-count { font-size: 12px; color: #888; }
+.lib-empty { font-size: 13px; color: #aaa; text-align: center; padding: 2rem 0; }
+.lib-card { background: #fff; border: 0.5px solid #e5e5e5; border-radius: 12px; padding: 1rem; margin-bottom: 8px; display: flex; gap: 12px; }
+.lib-img { width: 56px; height: 56px; border-radius: 8px; background: #f5f5f5; overflow: hidden; flex-shrink: 0; }
+.lib-img img { width: 100%; height: 100%; object-fit: cover; }
+.lib-info { flex: 1; min-width: 0; }
+.lib-name { font-size: 13px; font-weight: 500; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lib-drip { font-size: 12px; color: #666; line-height: 1.5; }
+.lib-del { font-size: 11px; color: #aaa; cursor: pointer; padding: 4px; flex-shrink: 0; }
+.lib-del:hover { color: #111; }
+.tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; background: #f5f5f5; color: #666; margin-right: 4px; margin-bottom: 4px; }
+.loading-dots::after { content: '...'; animation: dots 1.2s steps(4, end) infinite; }
+@keyframes dots { 0%, 100% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="pickaxe">⛏</div>
+  <div class="header-text">
+    <h1>곡괭이</h1>
+    <p>잊혀진 상품의 매력을 파냅니다</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">상품 이미지</div>
+  <div class="img-preview" id="imgPreview">
+    <span class="img-placeholder" id="imgPlaceholder">이미지를 업로드하거나 URL을 입력하세요</span>
+    <img id="previewImg" style="display:none;" />
+  </div>
+  <button class="save-btn" onclick="document.getElementById('fileInput').click()" style="margin-top:0; margin-bottom:8px;">파일 업로드</button>
+  <input type="file" id="fileInput" accept="image/*" onchange="handleFile(this)" style="display:none;">
+  <div class="field" style="margin-bottom:0;">
+    <label>또는 이미지 URL</label>
+    <input type="text" id="imgUrl" placeholder="https://..." oninput="handleUrlInput(this.value)">
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">상품 정보</div>
+  <div class="field">
+    <label>상품명</label>
+    <input type="text" id="prodName" placeholder="예: BT21 쿠키 봉제인형 M">
+  </div>
+  <div class="field">
+    <label>IP / 캐릭터</label>
+    <input type="text" id="prodIp" placeholder="예: BT21, 브라운&프렌즈, 미니니, 조구만...">
+  </div>
+  <div class="field">
+    <label>판매가</label>
+    <input type="text" id="prodPrice" placeholder="예: 29,900원">
+  </div>
+  <div class="field" style="margin-bottom:0;">
+    <label>특징 또는 비하인드 (자유롭게)</label>
+    <textarea id="prodDesc" placeholder="예: 출시된 지 1년 됐는데 조용히 있었음. 사이즈가 생각보다 큼. 디테일이 과함."></textarea>
+  </div>
+</div>
+
+<button class="gen-btn" id="genBtn" onclick="generate()">⛏ 발굴 시작</button>
+
+<div class="result-wrap" id="resultWrap" style="display:none;">
+  <div class="result-section">
+    <div class="result-label">드립 카피 (하나 선택)</div>
+    <div id="capyList"></div>
+  </div>
+  <div class="result-section">
+    <div class="result-label">MD 노트 초안</div>
+    <div class="copy-row">
+      <div class="copy-text" id="mdNote"></div>
+      <button class="copy-btn" onclick="copyText('mdNote')">복사</button>
+    </div>
+  </div>
+  <div class="result-section">
+    <div class="result-label">스토리 초안</div>
+    <div class="copy-row">
+      <div class="copy-text" id="storyText"></div>
+      <button class="copy-btn" onclick="copyText('storyText')">복사</button>
+    </div>
+  </div>
+  <button class="save-btn" onclick="saveToLibrary()">라이브러리에 저장</button>
+</div>
+
+<div class="library-wrap">
+  <div class="lib-header">
+    <span class="lib-title">발굴 라이브러리</span>
+    <span class="lib-count" id="libCount">0개</span>
+  </div>
+  <div id="libList"><div class="lib-empty">아직 저장된 항목이 없어요</div></div>
+</div>
+
+<script>
+var imageBase64 = null;
+var imageUrl = null;
+var selectedCapy = 0;
+var lastResult = null;
+var library = JSON.parse(localStorage.getItem('discovery_library') || '[]');
+
+function handleFile(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    imageBase64 = e.target.result;
+    imageUrl = null;
+    document.getElementById('imgUrl').value = '';
+    showPreview(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleUrlInput(url) {
+  if (!url) return;
+  imageUrl = url;
+  imageBase64 = null;
+  showPreview(url);
+}
+
+function showPreview(src) {
+  var img = document.getElementById('previewImg');
+  var ph = document.getElementById('imgPlaceholder');
+  img.src = src;
+  img.style.display = 'block';
+  ph.style.display = 'none';
+}
+
+async function generate() {
+  var name = document.getElementById('prodName').value.trim();
+  var ip = document.getElementById('prodIp').value.trim();
+  var price = document.getElementById('prodPrice').value.trim();
+  var desc = document.getElementById('prodDesc').value.trim();
+
+  if (!name) { alert('상품명을 입력해주세요.'); return; }
+
+  var btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-dots">발굴 중</span>';
+  document.getElementById('resultWrap').style.display = 'none';
+
+  var systemPrompt = `너는 LINE FRIENDS SQUARE 공식몰의 MD야.
+"이달의 발굴템" 기획전을 위한 상품 카피를 작성해줘.
+
+컨셉: "때를 못 만났을 뿐, 원래부터 좋은 것들"
+할인 없이도 클릭하고 싶게 만드는 것이 목표.
+자조적 유머, 공감, 반전 펀치라인 스타일.
+카피는 짧고 임팩트 있게.
+
+반드시 아래 JSON 형식으로만 응답해. 다른 텍스트 없이.
+{
+  "copies": ["카피1", "카피2", "카피3"],
+  "mdNote": "MD 노트 2~3문장",
+  "story": "스토리 2~3문장"
+}
+
+copies 3개는 각각 톤이 달라야 해:
+1번: 유머형 (자조적, 반전)
+2번: 공감형 (보는 사람이 고개 끄덕이는)
+3번: 감성형 (따뜻하거나 은근한)
+
+문체 레퍼런스:
+- "버섯 모자를 쓰고 있길래 그냥 버섯인 줄 알았습니다. 근데 자세히 보니 능이버섯이에요. 게다가 국내산."
+- "어떤 물건은 그냥 때를 못 만난 것뿐이에요."
+
+주의: 과장 광고 금지. 캐릭터 이름보다 상황과 감정으로 표현.`;
+
+  var userContent = [];
+
+  if (imageBase64) {
+    var mediaType = imageBase64.split(';')[0].split(':')[1];
+    userContent.push({
+      type: 'image',
+      source: { type: 'base64', media_type: mediaType, data: imageBase64.split(',')[1] }
+    });
+  }
+
+  userContent.push({
+    type: 'text',
+    text: '상품명: ' + name + '\nIP/캐릭터: ' + (ip || '미입력') + '\n판매가: ' + (price || '미입력') + '\n특징: ' + (desc || '미입력') + (imageBase64 ? '\n(이미지 첨부됨)' : imageUrl ? '\n이미지 URL: ' + imageUrl : '')
+  });
+
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userContent }]
+      })
+    });
+
+    var data = await res.json();
+    var text = data.content[0].text.replace(/```json|```/g, '').trim();
+    var parsed = JSON.parse(text);
+    lastResult = parsed;
+    selectedCapy = 0;
+    renderResult(parsed);
+  } catch(e) {
+    alert('생성 실패: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⛏ 다시 발굴하기';
+  }
+}
+
+function renderResult(data) {
+  var capyList = document.getElementById('capyList');
+  capyList.innerHTML = data.copies.map(function(c, i) {
+    return '<div class="capy-item' + (i === 0 ? ' selected' : '') + '" onclick="selectCapy(this, ' + i + ')">' +
+      '<span class="capy-num">' + (i+1) + '</span>' +
+      '<span class="capy-txt">' + c + '</span>' +
+    '</div>';
+  }).join('');
+  document.getElementById('mdNote').innerText = data.mdNote;
+  document.getElementById('storyText').innerText = data.story;
+  document.getElementById('resultWrap').style.display = 'block';
+}
+
+function selectCapy(el, idx) {
+  document.querySelectorAll('.capy-item').forEach(function(e) { e.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedCapy = idx;
+}
+
+function copyText(id) {
+  var text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = event.target;
+    btn.innerText = '완료';
+    setTimeout(function() { btn.innerText = '복사'; }, 1500);
+  });
+}
+
+function saveToLibrary() {
+  if (!lastResult) return;
+  var item = {
+    id: Date.now(),
+    name: document.getElementById('prodName').value.trim(),
+    ip: document.getElementById('prodIp').value.trim(),
+    price: document.getElementById('prodPrice').value.trim(),
+    drip: lastResult.copies[selectedCapy],
+    mdNote: lastResult.mdNote,
+    story: lastResult.story,
+    image: imageUrl || (imageBase64 ? imageBase64 : null),
+    savedAt: new Date().toLocaleDateString('ko-KR')
+  };
+  library.unshift(item);
+  localStorage.setItem('discovery_library', JSON.stringify(library));
+  renderLibrary();
+  var btn = event.target;
+  btn.innerText = '저장 완료!';
+  setTimeout(function() { btn.innerText = '라이브러리에 저장'; }, 1500);
+}
+
+function deleteFromLibrary(id) {
+  library = library.filter(function(i) { return i.id !== id; });
+  localStorage.setItem('discovery_library', JSON.stringify(library));
+  renderLibrary();
+}
+
+function renderLibrary() {
+  var list = document.getElementById('libList');
+  var count = document.getElementById('libCount');
+  count.innerText = library.length + '개';
+  if (!library.length) {
+    list.innerHTML = '<div class="lib-empty">아직 저장된 항목이 없어요</div>';
+    return;
+  }
+  list.innerHTML = library.map(function(item) {
+    return '<div class="lib-card">' +
+      '<div class="lib-img">' + (item.image ? '<img src="' + item.image + '">' : '') + '</div>' +
+      '<div class="lib-info">' +
+        '<div class="lib-name">' + (item.name || '상품명 없음') + '</div>' +
+        '<div class="lib-drip">' + (item.drip || '') + '</div>' +
+        '<div style="margin-top:4px;">' +
+          (item.ip ? '<span class="tag">' + item.ip + '</span>' : '') +
+          (item.price ? '<span class="tag">' + item.price + '</span>' : '') +
+          '<span class="tag">' + item.savedAt + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<span class="lib-del" onclick="deleteFromLibrary(' + item.id + ')">✕</span>' +
+    '</div>';
+  }).join('');
+}
+
+renderLibrary();
+</script>
+</body>
+</html>
