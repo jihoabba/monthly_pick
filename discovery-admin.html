@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discovery Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<style>
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
+  .toast { animation: slideUp .3s ease; }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  input, textarea, select { outline: none; }
+  input:focus, textarea:focus { ring: 2px; }
+</style>
+</head>
+<body class="bg-gray-950 min-h-screen text-white">
+
+<!-- Firebase SDKs (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCyXFWAMHm9OCZCJe6R1rHjKbXfssoR0fc",
+  authDomain: "monthly-discover.firebaseapp.com",
+  projectId: "monthly-discover",
+  storageBucket: "monthly-discover.firebasestorage.app",
+  messagingSenderId: "632342162351",
+  appId: "1:632342162351:web:bcb57cbf662da3c6559d5a"
+};
+const ADMIN_PASSWORD = '0715';
+const FIRESTORE_PATH = 'artifacts/lf-discovery/public/data/config/monthly';
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db = firebase.firestore();
+</script>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="flex items-center justify-center min-h-screen">
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-10 w-full max-w-sm shadow-2xl">
+    <p class="text-xs font-bold tracking-[4px] uppercase text-green-400 mb-3">LINE FRIENDS SQUARE</p>
+    <h1 class="text-2xl font-black mb-8 tracking-tight">Discovery Admin</h1>
+    <label class="block text-xs text-gray-400 mb-2 font-medium uppercase tracking-widest">Password</label>
+    <input
+      id="pw-input"
+      type="password"
+      placeholder="••••"
+      class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-sm mb-4 focus:border-green-400 transition"
+    >
+    <div id="login-error" class="text-red-400 text-xs mb-4 hidden">비밀번호가 틀렸습니다.</div>
+    <button onclick="handleLogin()" class="w-full bg-green-500 hover:bg-green-400 text-black font-bold text-sm py-3 rounded-lg transition tracking-wide">
+      LOGIN
+    </button>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel" class="hidden">
+  <!-- Header -->
+  <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <span class="text-green-400 text-xs font-bold tracking-[3px] uppercase">Discovery</span>
+      <span class="text-gray-600">|</span>
+      <span class="text-sm font-semibold">Admin Panel</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="save-status" class="text-xs text-gray-500"></span>
+      <button onclick="saveData()" class="bg-green-500 hover:bg-green-400 text-black font-bold text-xs px-5 py-2.5 rounded-lg transition tracking-wide">
+        저장하기
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-6 py-10 space-y-8">
+
+    <!-- BASIC INFO -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+      <h2 class="text-xs font-bold tracking-[3px] uppercase text-green-400 mb-5">기본 정보</h2>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5 font-medium">Vol. 번호</label>
+          <input id="vol" type="text" placeholder="04" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 transition">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5 font-medium">기간</label>
+          <input id="period" type="text" placeholder="2025 APR" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 transition">
+        </div>
+      </div>
+      <div class="mt-4">
+        <label class="block text-xs text-gray-400 mb-1.5 font-medium">MD 노트</label>
+        <textarea id="mdNote" rows="4" placeholder="MD 코멘트를 입력하세요..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 transition resize-none"></textarea>
+      </div>
+    </div>
+
+    <!-- FEATURED PICK -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+      <h2 class="text-xs font-bold tracking-[3px] uppercase text-green-400 mb-1">이달의 픽</h2>
+      <p class="text-xs text-gray-500 mb-5">대표 추천 상품 (1개)</p>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="col-span-2">
+          <label class="block text-xs text-gray-400 mb-1.5 font-medium">이미지 URL</label>
+          <input id="feat-image" type="url" placeholder="https://..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 transition">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs text-gray-400 mb-1.5 font-medium">상품 랜딩 URL</label>
+          <input id="feat-url" type="url" placeholder="https://..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 transition">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs text-gray-400 mb-1.5 font-medium">상품명</label>
+          <input id="feat-name" type="text" placeholder="상품명을 입력하세요" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 transition">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5 font-medium">판매가</label>
+          <input id="feat-price" type="text" placeholder="12,900원" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 transition">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5 font-medium">정가 <span class="text-gray-600">(선택)</span></label>
+          <input id="feat-originalPrice" type="text" placeholder="18,000원" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 transition">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs text-gray-400 mb-1.5 font-medium">드립 카피</label>
+          <input id="feat-drip" type="text" placeholder='"능히 할 수 있는 능이버섯"' class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 transition">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs text-gray-400 mb-1.5 font-medium">스토리</label>
+          <textarea id="feat-story" rows="4" placeholder="제품 스토리를 입력하세요..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-green-400 transition resize-none"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCT GRID -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+      <h2 class="text-xs font-bold tracking-[3px] uppercase text-green-400 mb-1">발굴템 그리드</h2>
+      <p class="text-xs text-gray-500 mb-6">6개 상품</p>
+      <div id="products-container" class="space-y-6">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="fixed bottom-6 right-6 bg-green-500 text-black text-sm font-bold px-5 py-3 rounded-xl shadow-2xl hidden toast">
+  저장 완료!
+</div>
+
+<script>
+// ── Auth & Login ──────────────────────────────────────────────
+function handleLogin() {
+  const pw = document.getElementById('pw-input').value;
+  if (pw !== ADMIN_PASSWORD) {
+    document.getElementById('login-error').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('login-error').classList.add('hidden');
+
+  auth.signInAnonymously()
+    .then(() => {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('admin-panel').classList.remove('hidden');
+      loadData();
+      buildProductForms();
+    })
+    .catch(err => {
+      alert('Firebase 인증 오류: ' + err.message);
+    });
+}
+
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleLogin();
+});
+
+// ── Product Form Builder ──────────────────────────────────────
+function buildProductForms() {
+  const container = document.getElementById('products-container');
+  container.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    container.insertAdjacentHTML('beforeend', `
+      <div class="border border-gray-800 rounded-xl p-5">
+        <p class="text-xs font-bold text-white mb-4 tracking-widest">PRODUCT ${i + 1}</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="col-span-2">
+            <label class="block text-xs text-gray-400 mb-1 font-medium">이미지 URL</label>
+            <input id="p${i}-image" type="url" placeholder="https://..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-400 transition">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs text-gray-400 mb-1 font-medium">상품 랜딩 URL</label>
+            <input id="p${i}-url" type="url" placeholder="https://..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-400 transition">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs text-gray-400 mb-1 font-medium">상품명</label>
+            <input id="p${i}-name" type="text" placeholder="상품명" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-400 transition">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1 font-medium">판매가</label>
+            <input id="p${i}-price" type="text" placeholder="9,900원" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-400 transition">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1 font-medium">정가 <span class="text-gray-600">(선택)</span></label>
+            <input id="p${i}-originalPrice" type="text" placeholder="14,000원" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-400 transition">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs text-gray-400 mb-1 font-medium">드립 카피</label>
+            <input id="p${i}-drip" type="text" placeholder='"여기서 이러고 있을 줄이야"' class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-400 transition">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs text-gray-400 mb-1 font-medium">특장점 <span class="text-gray-600">(선택)</span></label>
+            <input id="p${i}-point" type="text" placeholder="특장점 입력" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-400 transition">
+          </div>
+        </div>
+      </div>
+    `);
+  }
+}
+
+// ── Load Data from Firestore ──────────────────────────────────
+function loadData() {
+  const docRef = db.doc(FIRESTORE_PATH);
+  docRef.get().then(snap => {
+    if (!snap.exists) return;
+    const d = snap.data();
+
+    setValue('vol', d.vol || '');
+    setValue('period', d.period || '');
+    setValue('mdNote', d.mdNote || '');
+
+    if (d.featured) {
+      const f = d.featured;
+      setValue('feat-image', f.image || '');
+      setValue('feat-url', f.url || '');
+      setValue('feat-name', f.name || '');
+      setValue('feat-price', f.price || '');
+      setValue('feat-originalPrice', f.originalPrice || '');
+      setValue('feat-drip', f.drip || '');
+      setValue('feat-story', f.story || '');
+    }
+
+    if (d.products && Array.isArray(d.products)) {
+      d.products.forEach((p, i) => {
+        if (i >= 6) return;
+        setValue(`p${i}-image`, p.image || '');
+        setValue(`p${i}-url`, p.url || '');
+        setValue(`p${i}-name`, p.name || '');
+        setValue(`p${i}-price`, p.price || '');
+        setValue(`p${i}-originalPrice`, p.originalPrice || '');
+        setValue(`p${i}-drip`, p.drip || '');
+        setValue(`p${i}-point`, p.point || '');
+      });
+    }
+  }).catch(err => {
+    console.error('데이터 불러오기 실패:', err);
+  });
+}
+
+function setValue(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+
+// ── Save Data to Firestore ────────────────────────────────────
+function saveData() {
+  const statusEl = document.getElementById('save-status');
+  statusEl.textContent = '저장 중...';
+
+  const products = [];
+  for (let i = 0; i < 6; i++) {
+    products.push({
+      image: getVal(`p${i}-image`),
+      url: getVal(`p${i}-url`),
+      name: getVal(`p${i}-name`),
+      price: getVal(`p${i}-price`),
+      originalPrice: getVal(`p${i}-originalPrice`),
+      drip: getVal(`p${i}-drip`),
+      point: getVal(`p${i}-point`),
+    });
+  }
+
+  const payload = {
+    vol: getVal('vol'),
+    period: getVal('period'),
+    mdNote: getVal('mdNote'),
+    featured: {
+      image: getVal('feat-image'),
+      url: getVal('feat-url'),
+      name: getVal('feat-name'),
+      price: getVal('feat-price'),
+      originalPrice: getVal('feat-originalPrice'),
+      drip: getVal('feat-drip'),
+      story: getVal('feat-story'),
+    },
+    products,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+
+  db.doc(FIRESTORE_PATH).set(payload)
+    .then(() => {
+      statusEl.textContent = '';
+      showToast();
+    })
+    .catch(err => {
+      statusEl.textContent = '저장 실패';
+      alert('저장 오류: ' + err.message);
+    });
+}
+
+function getVal(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function showToast() {
+  const toast = document.getElementById('toast');
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 2500);
+}
+</script>
+
+</body>
+</html>
