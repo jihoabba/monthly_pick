@@ -53,15 +53,50 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif;
 .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; background: #f5f5f5; color: #666; margin-right: 4px; margin-bottom: 4px; }
 .loading-dots::after { content: '...'; animation: dots 1.2s steps(4, end) infinite; }
 @keyframes dots { 0%, 100% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+/* API key setup overlay */
+.setup-overlay { position: fixed; inset: 0; background: #fff; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.setup-box { width: 100%; max-width: 400px; border: 0.5px solid #e5e5e5; border-radius: 16px; padding: 1.5rem; }
+.setup-box h2 { font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+.setup-box p { font-size: 12px; color: #888; margin-bottom: 1.25rem; }
+.setup-notice { font-size: 11px; color: #aaa; background: #f5f5f5; border-radius: 8px; padding: 10px 12px; margin-bottom: 1rem; line-height: 1.6; }
+.setup-label { display: block; font-size: 11px; color: #666; margin-bottom: 4px; }
+.setup-input { width: 100%; font-family: inherit; font-size: 13px; border: 0.5px solid #ddd; border-radius: 8px; padding: 8px 10px; outline: none; margin-bottom: 12px; }
+.setup-input:focus { border-color: #111; }
+.setup-error { font-size: 12px; color: #e44; margin-bottom: 8px; display: none; }
+.setup-submit { width: 100%; padding: 11px; font-size: 13px; font-weight: 500; cursor: pointer; background: #111; color: #fff; border: none; border-radius: 8px; font-family: inherit; }
+.api-reset { font-size: 11px; color: #aaa; cursor: pointer; padding: 2px 6px; border: 0.5px solid #e5e5e5; border-radius: 6px; background: none; font-family: inherit; }
+.api-reset:hover { color: #111; }
 </style>
 </head>
 <body>
 
+<!-- API KEY SETUP (shown when no key in sessionStorage) -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-box">
+    <h2>⛏ 곡괭이</h2>
+    <p>시작하려면 API 키를 입력해주세요.</p>
+    <div class="setup-notice">
+      🔐 API 키는 이 탭의 메모리(sessionStorage)에만 저장됩니다.<br>
+      탭을 닫으면 자동으로 사라지며, 파일이나 서버에 저장되지 않습니다.
+    </div>
+    <label class="setup-label">Admin Password</label>
+    <input class="setup-input" type="password" id="setupPw" placeholder="••••">
+    <label class="setup-label">Claude API Key</label>
+    <input class="setup-input" type="password" id="setupKey" placeholder="sk-ant-api03-...">
+    <div class="setup-error" id="setupError"></div>
+    <button class="setup-submit" onclick="submitSetup()">시작하기</button>
+  </div>
+</div>
+
 <div class="header">
+  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
   <div class="pickaxe">⛏</div>
   <div class="header-text">
     <h1>곡괭이</h1>
     <p>잊혀진 상품의 매력을 파냅니다</p>
+  </div>
+  </div>
+  <button class="api-reset" onclick="resetKey()">키 초기화</button>
   </div>
 </div>
 
@@ -132,6 +167,36 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif;
 </div>
 
 <script>
+// ── API Key setup ──
+var ADMIN_PW = '0715';
+
+function submitSetup() {
+  var pw = document.getElementById('setupPw').value;
+  var key = document.getElementById('setupKey').value.trim();
+  var err = document.getElementById('setupError');
+  if (pw !== ADMIN_PW) { err.style.display='block'; err.textContent='비밀번호가 틀렸습니다.'; return; }
+  if (!key.startsWith('sk-ant-')) { err.style.display='block'; err.textContent='API 키 형식이 올바르지 않습니다.'; return; }
+  sessionStorage.setItem('gk_api_key', key);
+  document.getElementById('setupOverlay').style.display = 'none';
+}
+
+function resetKey() {
+  sessionStorage.removeItem('gk_api_key');
+  document.getElementById('setupPw').value = '';
+  document.getElementById('setupKey').value = '';
+  document.getElementById('setupError').style.display = 'none';
+  document.getElementById('setupOverlay').style.display = 'flex';
+}
+
+// Hide setup if key already exists in this session
+if (sessionStorage.getItem('gk_api_key')) {
+  document.getElementById('setupOverlay').style.display = 'none';
+}
+
+document.getElementById('setupPw').addEventListener('keydown', function(e) { if (e.key==='Enter') document.getElementById('setupKey').focus(); });
+document.getElementById('setupKey').addEventListener('keydown', function(e) { if (e.key==='Enter') submitSetup(); });
+
+// ── Main app ──
 var imageBase64 = null;
 var imageUrl = null;
 var selectedCapy = 0;
@@ -221,11 +286,19 @@ copies 3개는 각각 톤이 달라야 해:
   });
 
   try {
+    var apiKey = sessionStorage.getItem('gk_api_key');
+    if (!apiKey) { resetKey(); return; }
+
     var res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true',
+      },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1000,
         system: systemPrompt,
         messages: [{ role: 'user', content: userContent }]
